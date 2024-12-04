@@ -7,7 +7,7 @@
     "start": "tsc && node ./dist/app.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "bassel",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^22.10.1",
