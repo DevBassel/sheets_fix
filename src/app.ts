@@ -12,16 +12,15 @@ async function openExcelFile(filePath: string, outFileName: string) {
   try {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(filePath);
-    //   validate
     const resultPath = path.join(
       __dirname,
       "..",
       "data",
       `${outFileName}-${Date.now().toString()}`
     );
-
     await fs.promises.mkdir(path.join(resultPath), { recursive: true });
 
+    // good data
     const outValidPath = path.join(resultPath, `Good.xlsx`);
     const validRows: ExcelJS.RowMap[] = [];
     // bad data
@@ -37,7 +36,6 @@ async function openExcelFile(filePath: string, outFileName: string) {
       badDataCount: 0,
       goodDataCount: 0,
     };
-    const reportPath = path.join(resultPath, `Report.json`);
 
     const worksheet = workbook.getWorksheet(1);
     if (worksheet) {
@@ -133,7 +131,7 @@ async function openExcelFile(filePath: string, outFileName: string) {
       await writeRowsToNewExcel(outValidPath, validRows);
       await writeRowsToNewExcel(outBadPath, badRows);
 
-      await writeJsonFile(reportPath, report);
+      await writeJsonFile(path.join(resultPath, `Report.json`), report);
     }
   } catch (error) {
     console.log("TCL: error", error);
@@ -147,7 +145,6 @@ function checkValue(val: string) {
 ensureDirectoriesExist("./");
 
 openExcelFile("./clean_sheets/زفتي.xlsx", "زفتي");
-
 
 // to remove all styles from fken sheet
 // convertExcelToCSV("./sheets/زفت22ي.xlsx", "زفتي");
