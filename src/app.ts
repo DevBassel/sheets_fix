@@ -61,6 +61,9 @@ async function openExcelFile(filePath: string, outFileName: string) {
           if (cellVal.result) {
             cellVal = cellVal.result;
           }
+          if (cellVal == "احمد هيثم محمد سعيد") {
+            console.log("TCL: row", row.values);
+          }
 
           switch (colNumber) {
             // name
@@ -83,7 +86,7 @@ async function openExcelFile(filePath: string, outFileName: string) {
             case 3:
               if (!report.gov.includes(cellVal)) report.gov.push(cellVal);
               if (checkValue(cellVal)) {
-                if (/(غرب)/gi.test(cellVal)) {
+                if (/(غرب|زفت)/gi.test(cellVal)) {
                   cell.value = "محافظه الغربية";
                   good++;
                 }
@@ -121,17 +124,18 @@ async function openExcelFile(filePath: string, outFileName: string) {
               if (checkValue(cellVal)) {
                 if (/(سنط)/gi.test(cellVal)) {
                   cell.value = "مركز السنطة";
+                  good++;
                 }
 
                 if (/(زفت)/gi.test(cellVal)) {
                   cell.value = "مركز زفتى";
+                  good++;
                 }
 
-                if (/(طنطا)/gi.test(cellVal)) {
+                if (/(طنطا|طنطا - غربية)/gi.test(cellVal)) {
                   cell.value = "مركز طنطا";
+                  good++;
                 }
-
-                if (!/(غرب)/gi.test(cellVal)) good++;
               }
               break;
             // nid
@@ -217,11 +221,11 @@ function checkValue(val: string) {
 ensureDirectoriesExist("./");
 
 // open file and work
-openExcelFile("./clean_sheets/رسمي لغات.xlsx", "رسمي لغات"); // done
+// openExcelFile("./clean_sheets/رسمي لغات.xlsx", "رسمي لغات"); // done
 // openExcelFile("./clean_sheets/رسمي حكومي.xlsx", "رسمي حكومي"); // done
 // openExcelFile("./clean_sheets/زفتي.xlsx", "زفتي");
 // openExcelFile("./clean_sheets/شرق طنطا.xlsx", "شرق طنطا");
-// openExcelFile("./clean_sheets/غرب طنطا.xlsx", "غرب طنطا");
+openExcelFile("./clean_sheets/غرب طنطا.xlsx", "غرب طنطا");
 
 // convertCsvToExcel("./csvs/غرب طنطا-1733289544445-.csv", "غرب طنطا");
 
