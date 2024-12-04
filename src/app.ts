@@ -170,7 +170,7 @@ async function openExcelFile(filePath: string, outFileName: string) {
                   cls3.add(cellVal);
                   cell.value = "الصف الثالث الابتدائي";
                 }
-                if (/(راب|4)/gi.test(cellVal)) {
+                if (/(راب|4|رايع)/gi.test(cellVal)) {
                   cls4.add(cellVal);
                   cell.value = "الصف الرابع الابتدائي";
                 }
