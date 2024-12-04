@@ -35,7 +35,15 @@ async function openExcelFile(filePath: string, outFileName: string) {
       classes: [],
       badDataCount: 0,
       goodDataCount: 0,
+      cls: {},
     };
+
+    let cls1: string[] = [];
+    let cls2: string[] = [];
+    let cls3: string[] = [];
+    let cls4: string[] = [];
+    let cls5: string[] = [];
+    let cls6: string[] = [];
 
     const worksheet = workbook.getWorksheet(1);
     if (worksheet) {
@@ -55,6 +63,9 @@ async function openExcelFile(filePath: string, outFileName: string) {
             // name
             case 1:
               if (checkValue(cellVal)) {
+                if (typeof cellVal == "object") {
+                  console.log("TCL: openExcelFile -> cellVal", cellVal);
+                }
                 good++;
               }
               break;
@@ -63,9 +74,7 @@ async function openExcelFile(filePath: string, outFileName: string) {
               if (checkValue(cellVal)) {
                 good++;
               }
-              if (typeof cellVal === "object") {
-                console.log("TCL: cellVal", cellVal);
-              }
+
               break;
             // gov col
             case 3:
@@ -109,6 +118,24 @@ async function openExcelFile(filePath: string, outFileName: string) {
                 typeof cellVal != "object"
               ) {
                 report.classes.push(cellVal);
+                if (/(ول|1)/gi.test(cellVal)) {
+                  cls1.push(cellVal);
+                }
+                if (/(ثان|2)/gi.test(cellVal)) {
+                  cls2.push(cellVal);
+                }
+                if (/(ثال|3)/gi.test(cellVal)) {
+                  cls3.push(cellVal);
+                }
+                if (/(را|4)/gi.test(cellVal)) {
+                  cls4.push(cellVal);
+                }
+                if (/(خا|5)/gi.test(cellVal)) {
+                  cls5.push(cellVal);
+                }
+                if (/(سا|6)/gi.test(cellVal)) {
+                  cls6.push(cellVal);
+                }
               }
               if (checkValue(cellVal)) {
                 good++;
@@ -122,7 +149,12 @@ async function openExcelFile(filePath: string, outFileName: string) {
 
         good = 0;
       });
-
+      report.cls["class1"] = cls1;
+      report.cls["class2"] = cls2;
+      report.cls["class3"] = cls3;
+      report.cls["class4"] = cls4;
+      report.cls["class5"] = cls5;
+      report.cls["class6"] = cls6;
       // result
       report.badDataCount = badRows.length;
       report.goodDataCount = validRows.length;
@@ -144,7 +176,8 @@ function checkValue(val: string) {
 
 ensureDirectoriesExist("./");
 
-openExcelFile("./clean_sheets/زفتي.xlsx", "زفتي");
+// open file and work
+openExcelFile("./clean_sheets/زفتي.xlsx", "زفت");
 
-// to remove all styles from fken sheet
+// to remove all styles from fken sheet output ==> ./csvs
 // convertExcelToCSV("./sheets/زفت22ي.xlsx", "زفتي");

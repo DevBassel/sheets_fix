@@ -5,4 +5,7 @@ export interface IRep {
   mange: any[];
   center: any[];
   classes: any[];
+  cls: {
+    [key: string]: string[];
+  };
 }
