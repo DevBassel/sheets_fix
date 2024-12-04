@@ -1,41 +1,43 @@
 import ExcelJS from "exceljs";
 import fs from "fs";
 import path from "path";
+import { IRep } from "./types/report.interface";
+import { ensureDirectoriesExist } from "./functions/ensureDirectoriesExist";
+import { writeRowsToCSV } from "./functions/writeRowsToCSV";
+import { writeRowsToNewExcel } from "./functions/writeRowsToNewExcel";
+import { writeJsonFile } from "./functions/writeJsonFile";
+import { convertExcelToCSV } from "./functions/convertExcelToCSV";
 
-interface IRep {
-  badDataCount: number;
-  goodDataCount: number;
-  gov: any[];
-  mange: any[];
-  center: any[];
-  classes: any[];
-}
-
-async function openExcelFile(
-  filePath: string,
-  outFileName: string,
-  type: "CSV" | "xlsx"
-) {
+async function openExcelFile(filePath: string, outFileName: string) {
   try {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile(filePath);
     //   validate
-    const outValidPath = `./data/valid/valide-${outFileName}-${Date.now().toString()}.${type}`;
+    const resultPath = path.join(
+      __dirname,
+      "..",
+      "data",
+      `${outFileName}-${Date.now().toString()}`
+    );
+
+    await fs.promises.mkdir(path.join(resultPath), { recursive: true });
+
+    const outValidPath = path.join(resultPath, `Good.xlsx`);
     const validRows: ExcelJS.RowMap[] = [];
     // bad data
-    const outBadPath = `./data/bad/bad-${outFileName}-${Date.now()}.${type}`;
+    const outBadPath = path.join(resultPath, `Bad.xlsx`);
     const badRows: ExcelJS.RowMap[] = [];
 
     // report
     const report: IRep = {
-      gov: [], // row index = 3
-      mange: [], // row index = 4
-      center: [], // row index = 5
+      gov: [],
+      mange: [],
+      center: [],
       classes: [],
       badDataCount: 0,
       goodDataCount: 0,
     };
-    const reportPath = `./data/reports/rep-${outFileName}-${Date.now()}.json`;
+    const reportPath = path.join(resultPath, `Report.json`);
 
     const worksheet = workbook.getWorksheet(1);
     if (worksheet) {
@@ -46,81 +48,78 @@ async function openExcelFile(
         let good = 0;
 
         row.eachCell((cell, colNumber) => {
-          if (cell.value) {
-            let cellVal = cell.value as any;
-            if (cellVal.result) {
-              cellVal = cellVal.result;
-            }
-            switch (colNumber) {
-              // name col
-              case 1:
+          cell.style = {};
+          let cellVal = cell.value as any;
+          if (cellVal.result) {
+            cellVal = cellVal.result;
+          }
+          switch (colNumber) {
+            // name
+            case 1:
+              if (checkValue(cellVal)) {
                 good++;
-                break;
-
-              // school col
-              case 2:
+              }
+              break;
+            // school
+            case 2:
+              if (checkValue(cellVal)) {
                 good++;
-                break;
-
-              // gov col
-              case 3:
-                if (!report.gov.includes(cellVal)) report.gov.push(cellVal);
+              }
+              if (typeof cellVal === "object") {
+                console.log("TCL: cellVal", cellVal);
+              }
+              break;
+            // gov col
+            case 3:
+              if (!report.gov.includes(cellVal)) report.gov.push(cellVal);
+              if (checkValue(cellVal)) {
                 good++;
-                break;
+              }
+              break;
 
-              // mange
-              case 4:
-                if (!report.mange.includes(cellVal)) report.mange.push(cellVal);
+            // mange
+            case 4:
+              if (!report.mange.includes(cellVal)) report.mange.push(cellVal);
+              if (checkValue(cellVal)) {
                 good++;
-                break;
+              }
+              break;
 
-              // center
-              case 5:
-                if (!report.center.includes(cellVal))
-                  report.center.push(cellVal);
+            // center
+            case 5:
+              if (!report.center.includes(cellVal)) report.center.push(cellVal);
+              if (checkValue(cellVal)) {
                 good++;
-                break;
-
-              // vaillage col
-              case 6:
+              }
+              break;
+            // nid
+            case 7:
+              if (checkValue(cellVal)) {
                 good++;
-                break;
-
-              // nid col
-              case 7:
+              }
+              break;
+            // phone
+            case 10:
+              if (checkValue(cellVal)) {
                 good++;
-                break;
-
-              // gender col
-              case 8:
+              }
+              break;
+            // class col
+            case 11:
+              if (
+                !report.classes.includes(cellVal) &&
+                typeof cellVal != "object"
+              ) {
+                report.classes.push(cellVal);
+              }
+              if (checkValue(cellVal)) {
                 good++;
-                break;
-
-              // address col
-              case 9:
-                good++;
-                break;
-
-              // phone col
-              case 10:
-                if (cellVal.length > 9) good++;
-                break;
-
-              // class col
-              case 11:
-                if (
-                  !report.classes.includes(cellVal) &&
-                  typeof cellVal != "object"
-                ) {
-                  report.classes.push(cellVal);
-                  good++;
-                }
-                break;
-            }
+              }
+              break;
           }
         });
 
-        if (good == 11) validRows.push(row);
+        if (good == 8) validRows.push(row);
         else badRows.push(row);
 
         good = 0;
@@ -130,13 +129,10 @@ async function openExcelFile(
       report.badDataCount = badRows.length;
       report.goodDataCount = validRows.length;
 
-      if (type == "CSV") {
-        await writeRowsToCSV(outValidPath, validRows);
-        await writeRowsToCSV(outBadPath, badRows);
-      } else {
-        await writeRowsToNewExcel(outValidPath, validRows);
-        await writeRowsToNewExcel(outBadPath, badRows);
-      }
+      await writeRowsToCSV(outValidPath.replace(".xlsx", ".csv"), validRows);
+      await writeRowsToNewExcel(outValidPath, validRows);
+      await writeRowsToNewExcel(outBadPath, badRows);
+
       await writeJsonFile(reportPath, report);
     }
   } catch (error) {
@@ -144,73 +140,14 @@ async function openExcelFile(
   }
 }
 
-// write new sheet
-async function writeRowsToNewExcel(filePath: string, rows: ExcelJS.RowMap[]) {
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet("Sheet1");
-
-  rows.forEach((row) => {
-    if (row.values) {
-      const rowData = row.values.slice(1);
-      const formattedRow = rowData.map((cell: any) => {
-        return `${cell}`;
-      });
-      worksheet.addRow(formattedRow);
-    }
-  });
-
-  await workbook.xlsx.writeFile(filePath);
-  console.log(`Rows written successfully to ${filePath}`);
+function checkValue(val: string) {
+  return !!val;
 }
 
-// write CSV
-async function writeRowsToCSV(filePath: string, rows: ExcelJS.RowMap[]) {
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet("Sheet1");
+ensureDirectoriesExist("./");
 
-  // Add rows to the worksheet
-  rows.forEach((row) => {
-    if (row.values) {
-      const rowData = row.values.slice(1); // Skipping the first index (if necessary)
-      const formattedRow = rowData.map((cell: any) => {
-        // Ensure that cell values are converted to string format
-        return `${cell}`;
-      });
-      worksheet.addRow(formattedRow);
-    }
-  });
+openExcelFile("./clean_sheets/زفتي.xlsx", "زفتي");
 
-  // Export the data as CSV
-  await workbook.csv.writeFile(filePath);
-  console.log(`Rows written successfully to ${filePath}`);
-}
 
-async function writeJsonFile(filePath: string, data: any) {
-  try {
-    const jsonData = JSON.stringify(data, null, 1);
-    await fs.promises.writeFile(filePath, jsonData);
-    console.log(`report successfully written to ${filePath}`);
-  } catch (error) {
-    console.error("reportJSON file:", error);
-  }
-}
-
-async function ensureDirectoriesExist(basePath: string) {
-  const directories = ["valid", "reports", "bad"];
-
-  for (const dir of directories) {
-    const dirPath = path.join(basePath, dir);
-    try {
-      await fs.promises.mkdir(dirPath, { recursive: true });
-      console.log(`Directory ${dirPath} is ready.`);
-    } catch (error) {
-      console.error(`Error creating directory ${dirPath}:`, error);
-    }
-  }
-}
-
-function checkValue(val: string) {}
-const basePath = "./data";
-ensureDirectoriesExist(basePath);
-
-openExcelFile("./data/زفتي.xlsx", "زفتي", "xlsx");
+// to remove all styles from fken sheet
+// convertExcelToCSV("./sheets/زفت22ي.xlsx", "زفتي");
