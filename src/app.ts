@@ -39,17 +39,17 @@ async function openExcelFile(filePath: string, outFileName: string) {
       cls: {},
     };
 
-    let cls1: string[] = [];
-    let cls2: string[] = [];
-    let cls3: string[] = [];
-    let cls4: string[] = [];
-    let cls5: string[] = [];
-    let cls6: string[] = [];
+    let cls1: Set<string> = new Set();
+    let cls2: Set<string> = new Set();
+    let cls3: Set<string> = new Set();
+    let cls4: Set<string> = new Set();
+    let cls5: Set<string> = new Set();
+    let cls6: Set<string> = new Set();
 
     const worksheet = workbook.getWorksheet(1);
     if (worksheet) {
       const headerRow = worksheet.getRow(1);
-      badRows.push(headerRow);
+      validRows.push(headerRow);
 
       worksheet.eachRow((row) => {
         let good = 0;
@@ -57,16 +57,18 @@ async function openExcelFile(filePath: string, outFileName: string) {
         row.eachCell((cell, colNumber) => {
           cell.style = {};
           let cellVal = cell.value as any;
+          // let cellVal = handelCell(cell.value);
           if (cellVal.result) {
             cellVal = cellVal.result;
           }
+
           switch (colNumber) {
             // name
             case 1:
               if (checkValue(cellVal)) {
-                if (typeof cellVal == "object") {
-                  console.log("TCL: openExcelFile -> cellVal", cellVal);
-                }
+                cell.value = `${String(cellVal)}`
+                  .replace(/[\r\n]+/g, "")
+                  .trim();
                 good++;
               }
               break;
@@ -81,7 +83,10 @@ async function openExcelFile(filePath: string, outFileName: string) {
             case 3:
               if (!report.gov.includes(cellVal)) report.gov.push(cellVal);
               if (checkValue(cellVal)) {
-                good++;
+                if (/(غرب)/gi.test(cellVal)) {
+                  cell.value = "محافظه الغربية";
+                  good++;
+                }
               }
               break;
 
@@ -89,7 +94,24 @@ async function openExcelFile(filePath: string, outFileName: string) {
             case 4:
               if (!report.mange.includes(cellVal)) report.mange.push(cellVal);
               if (checkValue(cellVal)) {
-                good++;
+                if (/(سنط)/gi.test(cellVal)) {
+                  cell.value = "اداره السنطة";
+                  good++;
+                }
+
+                if (/(زفت)/gi.test(cellVal)) {
+                  cell.value = "ادارة زفتى";
+                  good++;
+                }
+
+                if (/(شرق طن)/gi.test(cellVal)) {
+                  cell.value = "ادارة شرق طنطا";
+                  good++;
+                }
+                if (/(غرب طن)/gi.test(cellVal)) {
+                  cell.value = "ادارة غرب طنطا";
+                  good++;
+                }
               }
               break;
 
@@ -97,48 +119,65 @@ async function openExcelFile(filePath: string, outFileName: string) {
             case 5:
               if (!report.center.includes(cellVal)) report.center.push(cellVal);
               if (checkValue(cellVal)) {
-                good++;
+                if (/(سنط)/gi.test(cellVal)) {
+                  cell.value = "مركز السنطة";
+                }
+
+                if (/(زفت)/gi.test(cellVal)) {
+                  cell.value = "مركز زفتى";
+                }
+
+                if (/(طنطا)/gi.test(cellVal)) {
+                  cell.value = "مركز طنطا";
+                }
+
+                if (!/(غرب)/gi.test(cellVal)) good++;
               }
               break;
             // nid
             case 7:
               if (checkValue(cellVal)) {
                 good++;
+              } else {
+                console.log("TCL: cellVal", cell.value);
               }
               break;
             // phone
             case 10:
               if (checkValue(cellVal)) {
-                good++;
+                if (String(cellVal).length > 4) good++;
               }
               break;
             // class col
             case 11:
-              if (
-                !report.classes.includes(cellVal) &&
-                typeof cellVal != "object"
-              ) {
+              if (!report.classes.includes(cellVal)) {
                 report.classes.push(cellVal);
-                if (/(ول|1)/gi.test(cellVal)) {
-                  cls1.push(cellVal);
-                }
-                if (/(ثان|2)/gi.test(cellVal)) {
-                  cls2.push(cellVal);
-                }
-                if (/(ثال|3)/gi.test(cellVal)) {
-                  cls3.push(cellVal);
-                }
-                if (/(را|4)/gi.test(cellVal)) {
-                  cls4.push(cellVal);
-                }
-                if (/(خا|5)/gi.test(cellVal)) {
-                  cls5.push(cellVal);
-                }
-                if (/(سا|6)/gi.test(cellVal)) {
-                  cls6.push(cellVal);
-                }
               }
               if (checkValue(cellVal)) {
+                if (/(ول|1)/gi.test(cellVal)) {
+                  cls1.add(cellVal);
+                  cell.value = "الصف الاول الابتدائي";
+                }
+                if (/(ثان|2)/gi.test(cellVal)) {
+                  cls2.add(cellVal);
+                  cell.value = "الصف الثاني الابتدائي";
+                }
+                if (/(ثال|3)/gi.test(cellVal) || /(القالث)/gi.test(cellVal)) {
+                  cls3.add(cellVal);
+                  cell.value = "الصف الثالث الابتدائي";
+                }
+                if (/(راب|4)/gi.test(cellVal)) {
+                  cls4.add(cellVal);
+                  cell.value = "الصف الرابع الابتدائي";
+                }
+                if (/(امس|5)/gi.test(cellVal)) {
+                  cls5.add(cellVal);
+                  cell.value = "الصف الخامس الابتدائي";
+                }
+                if (/(سا|6)/gi.test(cellVal)) {
+                  cls6.add(cellVal);
+                  cell.value = "الصف السادس الابتدائي";
+                }
                 good++;
               }
               break;
@@ -150,25 +189,25 @@ async function openExcelFile(filePath: string, outFileName: string) {
 
         good = 0;
       });
-      report.cls["class1"] = cls1;
-      report.cls["class2"] = cls2;
-      report.cls["class3"] = cls3;
-      report.cls["class4"] = cls4;
-      report.cls["class5"] = cls5;
-      report.cls["class6"] = cls6;
+      report.cls["class1"] = [...cls1];
+      report.cls["class2"] = [...cls2];
+      report.cls["class3"] = [...cls3];
+      report.cls["class4"] = [...cls4];
+      report.cls["class5"] = [...cls5];
+      report.cls["class6"] = [...cls6];
+      report.classes = [];
       // result
       report.badDataCount = badRows.length;
       report.goodDataCount = validRows.length;
 
       await writeRowsToCSV(outValidPath.replace(".xlsx", ".csv"), validRows);
+      await writeRowsToCSV(outBadPath.replace(".xlsx", ".csv"), badRows);
       await writeRowsToNewExcel(outValidPath, validRows);
       await writeRowsToNewExcel(outBadPath, badRows);
 
       await writeJsonFile(path.join(resultPath, `Report.json`), report);
     }
-  } catch (error) {
-    console.log("TCL: error", error);
-  }
+  } catch (error) {}
 }
 
 function checkValue(val: string) {
@@ -178,8 +217,13 @@ function checkValue(val: string) {
 ensureDirectoriesExist("./");
 
 // open file and work
+openExcelFile("./clean_sheets/رسمي لغات.xlsx", "رسمي لغات"); // done
+// openExcelFile("./clean_sheets/رسمي حكومي.xlsx", "رسمي حكومي"); // done
+// openExcelFile("./clean_sheets/زفتي.xlsx", "زفتي");
+// openExcelFile("./clean_sheets/شرق طنطا.xlsx", "شرق طنطا");
 // openExcelFile("./clean_sheets/غرب طنطا.xlsx", "غرب طنطا");
+
 // convertCsvToExcel("./csvs/غرب طنطا-1733289544445-.csv", "غرب طنطا");
 
 // to remove all styles from fken sheet output ==> ./csvs
-// convertExcelToCSV("./sheets/غرب طنطا.xlsx", "غرب طنطا");
+// convertExcelToCSV("./sheets/زفتي.xlsx", "زفتي");

@@ -26,34 +26,29 @@ export async function convertExcelToCSV(
   worksheet.eachRow((row: ExcelJS.RowMap) => {
     const rowData = row.values
       .slice(1) // Skip the first index as it's undefined
-      .map((cell: any) => {
-        if (cell == "31612121605434") {
-          console.log("TCL: row", row.values);
-        }
-
-        if (typeof cell == "object") {
-          if (!!cell.richText) {
-            return `"${cell.richText.map((t: any) => t.text).join(" ")}"`
-              .replace(/[\r\n]+/g, "")
-              .trim();
-          } else {
-            if (!cell.result) {
-              return `""`.replace(/[\r\n]+/g, "").trim();
-            }
-          }
-        } else {
-          return `"${cell}"`.replace(/[\r\n]+/g, "").trim();
-        }
-      })
+      .map((cell: any) => handelCell(cell))
       .join(",");
     csvData.push(rowData);
   });
 
   // Write the CSV data to a file
-  fs.writeFileSync(
-    `./csvs/${outputFilePath}-${Date.now()}-.csv`,
-    csvData.join("\n"),
-    "utf8"
-  );
-  console.log(`File successfully converted to CSV at ${outputFilePath}`);
+  const out = `./csvs/${outputFilePath}-${Date.now()}`;
+  fs.writeFileSync(`${out}-.csv`, csvData.join("\n"), "utf8");
+  console.log(`File successfully converted to CSV at ${out}-.csv`);
+}
+
+export function handelCell(cell: any) {
+  if (typeof cell == "object") {
+    if (!!cell.richText) {
+      return `${String(cell.richText.map((t: any) => t.text).join(" "))}`
+        .replace(/[\r\n]+/g, "")
+        .trim();
+    } else if (!!cell.result)
+      return `${String(cell.result)}`.replace(/[\r\n]+/g, "").trim();
+    else {
+      console.log("TCL: handelCell -> ", cell);
+      return `""`.replace(/[\r\n]+/g, "").trim();
+    }
+  }
+  return `${String(cell)}`.replace(/[\r\n]+/g, "").trim();
 }
