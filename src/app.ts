@@ -7,6 +7,7 @@ import { writeRowsToCSV } from "./functions/writeRowsToCSV";
 import { writeRowsToNewExcel } from "./functions/writeRowsToNewExcel";
 import { writeJsonFile } from "./functions/writeJsonFile";
 import { convertExcelToCSV } from "./functions/convertExcelToCSV";
+import { convertCsvToExcel } from "./functions/convertCsvToExcel";
 
 async function openExcelFile(filePath: string, outFileName: string) {
   try {
@@ -177,7 +178,8 @@ function checkValue(val: string) {
 ensureDirectoriesExist("./");
 
 // open file and work
-openExcelFile("./clean_sheets/زفتي.xlsx", "زفت");
+// openExcelFile("./clean_sheets/غرب طنطا.xlsx", "غرب طنطا");
+// convertCsvToExcel("./csvs/غرب طنطا-1733289544445-.csv", "غرب طنطا");
 
 // to remove all styles from fken sheet output ==> ./csvs
-// convertExcelToCSV("./sheets/زفت22ي.xlsx", "زفتي");
+// convertExcelToCSV("./sheets/غرب طنطا.xlsx", "غرب طنطا");
